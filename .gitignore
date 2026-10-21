@@ -1,0 +1,5 @@
+node_modules/
+.private/
+session*.json
+*.session.json
+.DS_Store

@@ -1,0 +1,16 @@
+{
+  "harvest": true,
+  "replant": true,
+  "feed": true,
+  "collectAnimals": true,
+  "cook": true,
+  "sellDishes": true,
+  "autoPlan": true,
+  "autoHens": true,
+  "defaultCrop": "tomato",
+  "plotCrops": {},
+  "recipePriority": ["fries", "starfruitYogurt", "riceMeal", "ketchup"],
+  "reserveCoins": 2000,
+  "spendLimit": 5000,
+  "budgetPeriod": "day"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "chibi-farm-helper",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "demo": "node server.mjs --demo", "test": "node --test test/*.test.mjs" },
+  "engines": { "node": ">=22" },
+  "dependencies": { "playwright": "1.62.1" }
+}

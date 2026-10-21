@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="helper-token" content="__TOKEN__"><title>Chibi · Trợ lý nông trại</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body><main>
+  <header><div class="brand"><span class="brand-icon">✿</span><div>CHIBI TOWN<span class="eyebrow">TRỢ LÝ NÔNG TRẠI · CHẠY TRÊN MÁY</span></div></div><span id="badge" class="badge">Chưa kết nối</span></header>
+  <section class="hero"><div><p class="eyebrow">ĐỂ TRẠI LỚN LÊN, ĐÚNG GIỜ</p><h1>Một người phụ việc<br>cho khu vườn của bạn.</h1><p class="muted">Canh giờ thu hoạch, chăm vật nuôi và giữ bếp luôn sẵn sàng.</p></div><div class="hero-art" aria-hidden="true"><span>🌱</span><span>🥔</span><span>🍳</span></div></section>
+  <div id="demo" class="notice" hidden>DỮ LIỆU MẪU · Không kết nối hoặc thao tác tài khoản thật.</div>
+  <section class="connection panel"><div><h2>1. Kết nối tài khoản</h2><p>Đăng nhập trực tiếp trong cửa sổ game riêng, sau đó bấm Kết nối. Phiên chỉ giữ đến khi đóng công cụ.</p></div><div class="buttons"><button id="open">Mở cửa sổ đăng nhập ↗</button><button id="sync">Kết nối / làm mới</button></div></section>
+  <div id="error" class="notice error" role="alert" hidden></div>
+  <section class="stats"><article class="panel"><span>Tài khoản</span><strong id="player">Chưa đăng nhập</strong><small>Chỉ chăm nông trại chính của tài khoản này</small></article><article class="panel"><span>Số dư hiện tại</span><strong id="coins">—</strong><small>Xu trong game</small></article><article class="panel"><span>Đã chi / hạn mức</span><strong id="spent">0 / 5.000</strong><small id="budget-note">Giống và thức ăn từ khi mở công cụ</small></article><article class="panel"><span>Giờ server</span><strong id="clock">—</strong><small id="next-check">Đợi kết nối</small></article></section>
+  <div class="columns"><section class="panel settings"><div class="section-title"><div><p class="eyebrow">BẠN CHỌN, TRỢ LÝ LÀM</p><h2>2. Cách chăm trại</h2></div><span id="saved" class="muted"></span></div>
+    <div id="auto-summary" class="notice" hidden></div>
+    <form id="settings"><div class="toggles">
+      <label><input type="checkbox" name="harvest"> Thu cây chín</label><label><input type="checkbox" name="replant"> Gieo lại và tưới</label>
+      <label><input type="checkbox" name="feed"> Cho vật nuôi ăn</label><label><input type="checkbox" name="collectAnimals"> Thu sản phẩm vật nuôi</label>
+      <label><input type="checkbox" name="cook"> Nấu và nhận món</label><label><input type="checkbox" name="sellDishes"> Bán các món đã nấu</label>
+    </div><div class="fields"><label>Luôn giữ lại (xu)<input name="reserveCoins" type="number" min="0" max="10000000" step="1"></label><label><span id="budget-label">Tổng chi tối đa mỗi lần mở công cụ</span><input name="spendLimit" type="number" min="0" max="10000000" step="1"></label></div>
+    <label>Giống mặc định cho ô chưa có cây<select name="defaultCrop" id="default-crop"></select></label>
+    <div class="subheading"><h3>Gieo lại theo từng ô</h3><button type="button" id="preset" class="text-button">Gợi ý: 5 khoai + 1 khế</button></div><p class="hint">Cây đang lớn được giữ nguyên. Giống mới áp dụng sau khi thu hoạch.</p><div id="plots" class="plots"><p class="muted">Kết nối để chọn giống cho từng ô.</p></div>
+    <h3>Thứ tự ưu tiên nhà bếp</h3><p class="hint">Bếp chọn món đầu tiên có đủ nguyên liệu. Mỗi lần chỉ nấu một món.</p><div id="recipes" class="recipe-selects"></div>
+    <div class="buttons"><button type="submit" id="save">Lưu cấu hình</button></div></form>
+  </section><div class="right"><section class="panel control"><p class="eyebrow">SẴN SÀNG KHI BẠN MUỐN</p><h2>3. Bắt đầu chăm trại</h2><p id="status" role="status" aria-live="polite">Đợi kết nối tài khoản.</p><div class="buttons"><button id="start" class="primary" disabled>Bắt đầu</button><button id="pause" disabled>Tạm dừng</button></div><p class="hint">Giữ máy thức, có mạng và công cụ đang chạy. Khi máy ngủ, việc chăm trại sẽ gián đoạn. Tạm dừng vẫn để thao tác đang gửi hoàn tất.</p></section>
+  <section class="panel"><div class="section-title"><h2>Lịch tiếp theo</h2><span class="dot"></span></div><div id="schedule" class="timeline"><p class="muted">Lịch sẽ hiện sau khi kết nối.</p></div></section>
+  <section class="panel"><h2>Trong kho</h2><div id="stock" class="stock"><p class="muted">Chưa có dữ liệu.</p></div></section></div></div>
+  <section class="panel log-panel"><div class="section-title"><h2>Nhật ký chăm trại</h2><span class="muted">150 thao tác gần nhất · Không lưu mật khẩu</span></div><div id="logs" class="logs"><p class="muted">Mọi thao tác sẽ được ghi tại đây.</p></div></section>
+  <footer>Chế độ tự động chuẩn bị tối đa 6 gà mái bằng xu, chọn cây và món theo trại. Hạn mức 5.000 xu mỗi ngày theo giờ Việt Nam, luôn giữ 2.000 xu. Giữ cây đang lớn đến lúc thu hoạch. Không tự tiêu Gem hay mua thêm đất. Đối chiếu cơ chế game ngày 21/10/2026.</footer>
+</main><script id="catalog" type="application/json">__CATALOG__</script></body></html>

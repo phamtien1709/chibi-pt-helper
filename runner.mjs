@@ -14,6 +14,7 @@ export class Runner {
       this.settings=validateSettings(saved.settings);this.spent=saved.spent;this.revenue=saved.revenue??0;
       this.pending=saved.pending??null;this.budgetDay=saved.budgetDay;this.expectedPlayerId=saved.playerId;
     }
+    if(this.expectedPlayerId)this.transport.accountId=this.expectedPlayerId;
   }
   persist(){this.store?.save({settings:this.settings,spent:this.spent,revenue:this.revenue,pending:this.pending,budgetDay:this.budgetDay,playerId:this.player?.id??this.expectedPlayerId});}
   log(message,kind='info') {
@@ -71,6 +72,7 @@ export class Runner {
       logs:this.logs,planned,nextCheckAt:this.nextCheckAt,now:this.clock(),
       estimatedServerTime:this.snapshot?this.snapshot.serverTime+this.clock()-this.snapshotReceivedAt:null,
       pending:!!this.pending,demo:!!this.transport.demo,
+      loginMode:this.transport.credentialsFile?'password':'browser',
     };
   }
   async start() {
@@ -141,6 +143,7 @@ export class Runner {
 
 export function friendly(error) {
   return ({UNAUTHENTICATED:'Phiên đăng nhập hết hạn. Đăng nhập lại rồi kết nối.',
+    LOGIN_FAILED:'Đăng nhập tự động thất bại. Kiểm tra file tài khoản/mật khẩu và API đăng nhập.',
     NOT_ALLOWED:'Server từ chối thao tác. Đã dừng; đồng bộ lại để kiểm tra trạng thái.',
     INSUFFICIENT_COINS:'Không đủ xu khả dụng. Đã dừng.',
     INVENTORY_FULL:'Kho đầy. Bán hoặc chuyển bớt đồ trong game rồi kết nối lại.',

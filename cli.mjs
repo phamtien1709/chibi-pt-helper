@@ -5,15 +5,16 @@ import { StateStore } from './state-store.mjs';
 import { fileURLToPath } from 'node:url';
 
 const args=process.argv.slice(2);
-let file,config,check=false;
+let file,config,credentialsFile,check=false;
 for(let i=0;i<args.length;i++) {
   if(args[i]==='--session')file=args[++i];
+  else if(args[i]==='--credentials')credentialsFile=args[++i];
   else if(args[i]==='--config')config=args[++i];
   else if(args[i]==='--check')check=true;
-  else {console.error('Dùng: --terminal --session <file> [--config <file>] [--check]');process.exit(1);}
+  else {console.error('Dùng: --terminal (--session <file> hoặc --credentials <file>) [--config <file>] [--check]');process.exit(1);}
 }
-if(!file){console.error('Cần --session <file phiên đã xuất>.');process.exit(1);}
-const transport=new ApiTransport(file);
+if(!file&&!credentialsFile){console.error('Cần --session <file phiên> hoặc --credentials <file đăng nhập>.');process.exit(1);}
+const transport=new ApiTransport(file,{credentialsFile});
 const store=new StateStore(process.env.CHIBI_STATE_FILE??fileURLToPath(new URL('./.private/runtime.json',import.meta.url)));
 try{store.acquire();}catch(error){console.error(error.message);process.exit(78);}
 process.on('exit',()=>store.release());

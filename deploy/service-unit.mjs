@@ -5,7 +5,8 @@ function quote(value,exec=false){
   if(exec)text=text.replaceAll('$','$$');
   return `"${text}"`;
 }
-export function serviceUnit({node,cli,session,state}){
+export function serviceUnit({node,cli,session,credentials,state}){
+  const args=[node,cli,...(session?['--session',session]:[]),...(credentials?['--credentials',credentials]:[])];
   return `[Unit]
 Description=Chibi Farm Helper
 StartLimitIntervalSec=600
@@ -13,7 +14,7 @@ StartLimitBurst=5
 
 [Service]
 Type=exec
-ExecStart=${[node,cli,'--session',session].map(v=>quote(v,true)).join(' ')}
+ExecStart=${args.map(v=>quote(v,true)).join(' ')}
 Environment=${quote('CHIBI_STATE_FILE='+state)}
 Restart=on-failure
 RestartSec=60

@@ -41,6 +41,8 @@ function render(){
   const f=state.snapshot?.farm;
   $('badge').textContent=state.running?'● Đang chăm trại':state.player?'Đã kết nối · Tạm dừng':'Chưa kết nối';$('badge').classList.toggle('active',state.running);
   $('demo').hidden=!state.demo;$('player').textContent=state.player?.name??'Chưa đăng nhập';
+  $('open').textContent=state.loginMode==='password'?'Đăng nhập bằng tài khoản đã lưu':'Mở cửa sổ đăng nhập ↗';
+  $('connection-help').textContent=state.loginMode==='password'?'Bấm Kết nối để đọc trại. Công cụ tự đăng nhập lại khi phiên hết hạn; không cần mở Chrome.':'Đăng nhập trực tiếp trong cửa sổ game riêng, sau đó bấm Kết nối. Phiên chỉ giữ đến khi đóng công cụ.';
   $('coins').textContent=f?format(f.coins):'—';$('spent').textContent=`${format(state.spent)} / ${format(state.settings.spendLimit)}`;
   $('budget-note').textContent=state.settings.budgetPeriod==='day'?'Giống, thức ăn và gà · Trong ngày (giờ Việt Nam)':'Giống và thức ăn từ khi mở công cụ';
   $('budget-label').textContent=state.settings.budgetPeriod==='day'?'Tổng chi tối đa mỗi ngày':'Tổng chi tối đa mỗi lần mở công cụ';

@@ -2,6 +2,37 @@
 
 Trợ lý tự chăm nông trại chính trên https://musicque.politetech.com/farm. Chạy local có bảng theo dõi hoặc chạy trên VPS Linux chỉ bằng Node.js >=22, không cần Chrome/Playwright ở VPS.
 
+
+## Tự đăng nhập lại — không cần xuất phiên hoặc Chrome
+
+Chỉ tool thay đổi; Musicque/Chibi Town giữ nguyên. Tool dùng API `POST /farm/api/auth/login` đang có. Chạy các lệnh sau ngay trên VPS sau khi clone hoặc git pull:
+
+```sh
+# Nhập username/email và mật khẩu trực tiếp trong Terminal; mật khẩu không hiện trên màn hình.
+source ./run.sh --setup-login
+# Chỉ kiểm tra đăng nhập và kế hoạch, chưa gửi lệnh chăm trại.
+source ./run.sh --terminal --credentials ~/.config/chibi-farm-helper/login.json --check
+# Cài và bật dịch vụ chạy liên tục.
+bash ./install-vps.sh --credentials ~/.config/chibi-farm-helper/login.json
+```
+
+Nếu đang chạy bản cũ, dùng `systemctl --user stop chibi-farm-helper` trước khi kiểm tra/cài lại để tránh hai bot và trùng khóa trạng thái. Bản mới vẫn đọc file phiên cũ bằng `--session` như trước; có thể truyền cả `--session` và `--credentials` để dùng phiên cũ trước, tự đăng nhập khi cần.
+
+Thông tin đăng nhập lưu dạng JSON không mã hóa, chỉ chủ file được đọc/ghi (quyền 600), mặc định ở `~/.config/chibi-farm-helper/login.json`, ngoài repo. Không đưa file vào Git hoặc chat. Setup không ghi đè file có sẵn; để đổi mật khẩu, sửa file riêng này và giữ quyền 600, hoặc tạo file tên mới rồi cài lại dịch vụ trỏ vào file đó. Không nhập mật khẩu vào tham số dòng lệnh hoặc biến môi trường.
+
+Tool tự đăng nhập khi khởi động nếu chưa có phiên, khi phiên hết hạn hoặc API trả 401. Mỗi lần lấy phiên mới không gửi cookie cũ, nên phiên mới độc lập với browser đã dùng trên máy cá nhân. Đăng nhập cùng tài khoản ở thiết bị khác không làm tool tự đổi tài khoản. Tool không gọi API đăng xuất; nếu cookie bị thu hồi, tool thử đăng nhập lại bằng thông tin đã lưu. Sai mật khẩu, đổi tài khoản hoặc API đăng nhập khác dự kiến sẽ dừng (exit 78), không thử vô hạn.
+
+Phiên mới chỉ giữ trong bộ nhớ, không ghi đè file cookie cũ. Các thao tác gửi lại giữ nguyên requestId; nhiều request hết phiên dùng chung một lần đăng nhập lại. ID tài khoản được đối chiếu với trạng thái đã lưu trước khi gửi lại lệnh. Chỉ gửi thông tin đăng nhập tới đúng HTTPS origin của game, không theo redirect. Không dùng refresh token, client secret hoặc quyền quản trị.
+
+Muốn chạy local có bảng theo dõi nhưng không cần Chrome:
+
+```sh
+source ./run.sh --setup-login
+source ./run.sh --credentials ~/.config/chibi-farm-helper/login.json
+```
+
+Mở http://127.0.0.1:4179, bấm Kết nối rồi Bắt đầu. Local vẫn cần máy bật; VPS chạy độc lập. Tài khoản bị khóa, mật khẩu đổi nhưng file chưa cập nhật hoặc server/API lỗi vẫn cần xử lý; không thể bảo đảm chạy mãi không can thiệp.
+
 ## Chế độ mặc định: tự chăm trại
 
 Không cần chọn cây hoặc công thức. Khi lần đầu chạy, công cụ đọc `autopilot.json`:
@@ -61,9 +92,9 @@ systemctl --user stop chibi-farm-helper
 systemctl --user restart chibi-farm-helper
 ```
 
-Dịch vụ tự khởi động lại khi gặp lỗi mạng kéo dài hoặc tiến trình chết; không restart vòng lặp khi hết phiên, sai tài khoản, lỗi cấu hình hoặc lỗi nghiệp vụ (exit 78). Không mở cổng web nào trên VPS. Trạng thái nằm ở `~/.local/state/chibi-farm-helper/runtime.json`, tách khỏi repo và giữ qua git pull.
+Dịch vụ tự khởi động lại khi gặp lỗi mạng kéo dài hoặc tiến trình chết; không restart vòng lặp khi sai tài khoản, sai mật khẩu, lỗi cấu hình hoặc lỗi nghiệp vụ (exit 78). Với chế độ chỉ dùng cookie, hết phiên cũng dừng; chế độ --credentials tự lấy phiên mới. Không mở cổng web nào trên VPS. Trạng thái nằm ở `~/.local/state/chibi-farm-helper/runtime.json`, tách khỏi repo và giữ qua git pull.
 
-Sau khi xuất phiên mới, chép tới đường dẫn file phiên cũ trên VPS bằng cách an toàn, giữ quyền 600 rồi restart service. Phiên hiện tại thường tối đa 30 ngày theo luật backend; có thể bị thu hồi sớm. Không cam kết chạy vĩnh viễn không cần can thiệp: hết phiên, đầy kho, thay API hoặc VPS hỏng vẫn cần xử lý. Xem `systemctl status` và nhật ký khi nghi ngờ bot dừng.
+Sau khi xuất phiên mới, chép tới đường dẫn file phiên cũ trên VPS bằng cách an toàn, giữ quyền 600 rồi restart service. Phiên hiện tại thường tối đa 30 ngày theo luật backend; có thể bị thu hồi sớm. Không cam kết chạy vĩnh viễn không cần can thiệp: thông tin đăng nhập không còn đúng, đầy kho, thay API hoặc VPS hỏng vẫn cần xử lý. Chế độ chỉ cookie cần xuất lại khi hết phiên; --credentials tự đăng nhập lại. Xem `systemctl status` và nhật ký khi nghi ngờ bot dừng.
 
 ## Cập nhật code
 
@@ -84,4 +115,4 @@ PORT=4180 source ./run.sh --demo
 
 Demo không chạm tài khoản thật. Tests kiểm tra mốc giờ server, nguyên liệu, sức chứa, hạn mức, retry không chi trùng, phục hồi trạng thái, khóa tài khoản, phân bổ cây và transport API. Cài systemd thực tế cần kiểm chứng trên VPS Linux của bạn; môi trường phát triển hiện tại là macOS.
 
-`.gitignore` loại `.private/`, file phiên theo mẫu `session*.json` / `*.session.json` và node_modules. Đặt mọi bí mật trong `.private/` hoặc ngoài repo; kiểm tra git status trước khi push. Không đưa file phiên tên tùy ý vào repo.
+`.gitignore` loại `.private/`, file phiên theo mẫu `session*.json` / `*.session.json`, file đăng nhập theo mẫu `login*.json` / `credentials*.json` / `*.credentials.json` và node_modules. Đặt mọi bí mật trong `.private/` hoặc ngoài repo; kiểm tra git status trước khi push. Không đưa file phiên tên tùy ý vào repo.

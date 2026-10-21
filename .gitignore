@@ -2,4 +2,7 @@ node_modules/
 .private/
 session*.json
 *.session.json
+login*.json
+credentials*.json
+*.credentials.json
 .DS_Store

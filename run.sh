@@ -28,17 +28,23 @@
         'source /duong-dan/chibi-farm-helper/run.sh                  # Bảng theo dõi local' \
         'source /duong-dan/chibi-farm-helper/run.sh --demo           # Trại mẫu' \
         'source /duong-dan/chibi-farm-helper/run.sh --test           # Kiểm tra' \
+        'source /duong-dan/chibi-farm-helper/run.sh --setup-login [file] # Nhập tài khoản/mật khẩu ẩn' \
+        'source /duong-dan/chibi-farm-helper/run.sh --credentials <file> # Local không cần Chrome' \
         'source /duong-dan/chibi-farm-helper/run.sh --export-session /duong-dan/session.json' \
-        'source /duong-dan/chibi-farm-helper/run.sh --terminal --session /duong-dan/session.json [--config /duong-dan/config.json] [--check]'
+        'source /duong-dan/chibi-farm-helper/run.sh --terminal --credentials <file> [--config <file>] [--check]'
       exit 0;;
     --terminal) exec node "$chibi_dir/cli.mjs" "$@";;
+    --setup-login) exec node "$chibi_dir/setup-login.mjs" "$@";;
+    --credentials) set -- --credentials "$@";;
     --export-session) exec node "$chibi_dir/export-session.mjs" "$@";;
     --test) cd -- "$chibi_dir" || exit 1; exec node --test test/*.test.mjs;;
     --demo) set -- --demo "$@";;
     --local) ;;
     *) printf 'Chế độ không hợp lệ: %s\n' "$chibi_mode" >&2; exit 1;;
   esac
-  if [ "$chibi_mode" = '--local' ]; then
+  chibi_browser=true
+  for chibi_arg in "$@"; do if [ "$chibi_arg" = '--credentials' ]; then chibi_browser=false; fi; done
+  if [ "$chibi_mode" = '--local' ] && [ "$chibi_browser" = true ]; then
     chibi_bundle="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright"
     if [ -f "$chibi_bundle/package.json" ]; then
       export CHIBI_PLAYWRIGHT_PATH="$chibi_bundle"

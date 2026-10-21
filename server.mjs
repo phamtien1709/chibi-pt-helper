@@ -7,6 +7,7 @@ import { StateStore } from './state-store.mjs';
 import { crops, recipes, labels } from './catalog.mjs';
 import { Runner } from './runner.mjs';
 import { GameTransport } from './transport.mjs';
+import { ApiTransport } from './api-transport.mjs';
 
 export function buildServer({transport=new GameTransport(),port=4179,store=null}={}) {
   const token=randomBytes(32).toString('hex');
@@ -75,6 +76,12 @@ if(process.argv[1]===fileURLToPath(import.meta.url)) {
   const port=Number(process.env.PORT??4179);
   if(!Number.isInteger(port)||port<1024||port>65535) throw new Error('PORT không hợp lệ.');
   let transport;
+  const credentialsAt=process.argv.indexOf('--credentials');
+  if(credentialsAt>=0){
+    const credentialsFile=process.argv[credentialsAt+1];
+    if(!credentialsFile||credentialsFile.startsWith('--'))throw new Error('Cần đường dẫn sau --credentials.');
+    transport=new ApiTransport(undefined,{credentialsFile});
+  }
   if(process.argv.includes('--demo')) {const {DemoTransport}=await import('./test/demo-transport.mjs');transport=new DemoTransport();}
   const store=transport?.demo?null:new StateStore(process.env.CHIBI_STATE_FILE??fileURLToPath(new URL('./.private/runtime.json',import.meta.url)));
   if(store){store.acquire();process.on('exit',()=>store.release());}

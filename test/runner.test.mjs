@@ -53,3 +53,44 @@ test('Chu kỳ nhận món, bán, thu cây, nấu, gieo và tưới dùng snapsh
     assert(r.logs.some(l=>l.message==='Thu hoạch ô 1'));
   }finally{r.pause();}
 });
+
+function rejectionRunner({changeState=false,code='NOT_ALLOWED',definitive=true}={}) {
+  const s=fixture();s.farm.inventory={};
+  s.farm.plots[0]={stage:'ripe',cropId:'rice',wateredAt:0};
+  const ids=[];
+  const r=new Runner({async request(path,body){
+    if(path==='/player')return{id:'one',name:'One'};
+    if(path==='/inventory')return structuredClone(s);
+    ids.push(body.requestId);
+    if(changeState)s.farm.plots[0]={stage:'growing',cropId:'rice',wateredAt:s.serverTime};
+    throw Object.assign(new Error(code),{code,status:403,path,definitive});
+  }});
+  r.settings.replant=false;r.settings.cook=false;r.running=true;
+  return {r,ids};
+}
+test('Lệnh bị từ chối: bỏ pending, đồng bộ lại và bỏ lệnh không còn cần thiết',async()=>{
+  const {r,ids}=rejectionRunner({changeState:true});
+  try{
+    await r.cycle();clearTimeout(r.timer);
+    assert.equal(r.running,true);assert.equal(r.pending,null);assert.equal(ids.length,1);
+    assert(r.logs.some(l=>l.message.includes('Thu hoạch ô 1')&&l.message.includes('HTTP=403')&&l.message.includes('"cropId":"rice"')));
+    await r.cycle();clearTimeout(r.timer);
+    assert.equal(ids.length,1);assert.equal(r.running,true);
+  }finally{r.pause();}
+});
+test('Từ chối lặp lại: tối đa 3 lần, mã thao tác mới sau kết quả xác định',async()=>{
+  const {r,ids}=rejectionRunner();
+  try{
+    for(let i=0;i<3;i++){await r.cycle();clearTimeout(r.timer);}
+    assert.equal(r.running,false);assert.equal(r.timer,null);assert.equal(r.pending,null);
+    assert.equal(ids.length,3);assert.equal(new Set(ids).size,3);assert.equal(r.spent,0);
+    assert.match(r.status,/3 lần liên tiếp/);
+  }finally{r.pause();}
+});
+test('Không tự thử lại lỗi phiên đăng nhập, hoặc NOT_ALLOWED chưa xác định kết quả',async()=>{
+  for(const options of [{code:'UNAUTHENTICATED'},{definitive:false}]){
+    const {r,ids}=rejectionRunner(options);await r.cycle();
+    assert.equal(r.running,false);assert.equal(ids.length,1);assert.equal(r.timer,null);
+    if(options.definitive===false)assert(r.pending);
+  }
+});

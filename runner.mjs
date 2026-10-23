@@ -87,12 +87,13 @@ export class Runner {
     const pending=this.pending;
     this.persist();
     const before=this.snapshot.farm.coins;
+    this.log(`Gửi thao tác: ${pending.label}; lệnh=${JSON.stringify(pending.command)}; revision=${this.snapshot.revision}`);
     // Transport không tự retry POST. Giữ nguyên requestId nếu mất phản hồi.
     const result=await this.transport.request('/commands',pending.body);
     this.acceptSnapshot(result);
     this.spent+=pending.cost;
     if (pending.command.type==='sell') this.revenue+=Math.max(0,result.farm.coins-before);
-    this.log(pending.label,'success'); this.pending=null;
+    this.log(pending.label,'success'); this.pending=null; this.rejections=0;
     this.persist();
   }
   async cycle() {
@@ -120,12 +121,26 @@ export class Runner {
     } catch(error) {
       const code=error.code??error.message;
       this.lastErrorCode=code;
-      this.log(friendly(error),'error');
+      const rejected=this.pending;
+      this.log(`${friendly(error)} [mã=${code}${error.status?`; HTTP=${error.status}`:''}${error.path?`; API=${error.path}`:''}]${rejected?`; thao tác=${rejected.label}; lệnh=${JSON.stringify(rejected.command)}; trạng thái=${JSON.stringify(commandContext(this.snapshot,rejected.command))}`:''}`,'error');
       if (['NETWORK_ERROR','RATE_LIMITED','SERVER_ERROR'].includes(code)) {
         this.failures=(this.failures??0)+1;
         delay=code==='RATE_LIMITED'?60_000:Math.min(60_000,5000*2**(this.failures-1));
         this.status='Kết nối gián đoạn; đang đợi để thử lại với cùng mã thao tác.';
         if (this.failures>=5) this.pause('Đã dừng sau 5 lỗi kết nối liên tiếp. Kiểm tra mạng rồi bắt đầu lại.');
+      } else if (code==='NOT_ALLOWED' && error.definitive && rejected) {
+        // Server xác nhận không thực hiện: bỏ requestId cũ, đọc lại trước khi lập lệnh mới.
+        // Mất phản hồi/mất mạng tuyệt đối không đi vào nhánh này.
+        this.pending=null;
+        this.rejections=(this.rejections??0)+1;
+        this.persist();
+        if(this.rejections>=3) {
+          this.pause(`Server từ chối 3 lần liên tiếp: ${rejected.label}. Xem lệnh và trạng thái chi tiết trong nhật ký.`);
+        } else {
+          delay=5000;
+          this.status='Server từ chối thao tác; sẽ đồng bộ và tính lại sau 5 giây.';
+          this.log(this.status);
+        }
       } else {
         // Lỗi nghiệp vụ là kết quả xác định; không gửi lại lệnh đã bị từ chối.
         if (error.definitive) this.pending=null;
@@ -144,7 +159,7 @@ export class Runner {
 export function friendly(error) {
   return ({UNAUTHENTICATED:'Phiên đăng nhập hết hạn. Đăng nhập lại rồi kết nối.',
     LOGIN_FAILED:'Đăng nhập tự động thất bại. Kiểm tra file tài khoản/mật khẩu và API đăng nhập.',
-    NOT_ALLOWED:'Server từ chối thao tác. Đã dừng; đồng bộ lại để kiểm tra trạng thái.',
+    NOT_ALLOWED:'Server từ chối thao tác.',
     INSUFFICIENT_COINS:'Không đủ xu khả dụng. Đã dừng.',
     INVENTORY_FULL:'Kho đầy. Bán hoặc chuyển bớt đồ trong game rồi kết nối lại.',
     INVALID_COMMAND:'API khác phiên bản hỗ trợ. Đã dừng để kiểm tra.',
@@ -153,4 +168,21 @@ export function friendly(error) {
     SERVER_ERROR:'Server game đang gặp lỗi.',
     ACCOUNT_CHANGED:'Tài khoản đã đổi. Khởi động lại công cụ.',
   })[error.code??error.message]??error.message;
+}
+
+// Chỉ ghi dữ liệu trại cần chẩn đoán; không ghi token, cookie hoặc file đăng nhập.
+function commandContext(snapshot,command) {
+  if(!snapshot)return null;
+  const f=snapshot.farm;
+  const context={serverTime:snapshot.serverTime,revision:snapshot.revision,coins:f.coins};
+  if(command.type==='plot')context.plot=f.plots[command.index];
+  if(command.unit){
+    const key={poultry:'poultry',livestock:'animals',pond:'fish'}[command.unit];
+    context.fedAt=f.fedAt[command.unit];
+    context.herd=f[key]?.map(({species,ageMs,productionMs,careAt})=>({species,ageMs,productionMs,careAt}));
+  }
+  if(['cook','collect-dish','sell'].includes(command.type)){
+    context.inventory=f.inventory;context.kitchen=f.kitchen;
+  }
+  return context;
 }

@@ -34,7 +34,7 @@ export class GameTransport {
     await response.dispose();
     if (status>=200&&status<300&&data) return data;
     const code=status===401?'UNAUTHENTICATED':status===429?'RATE_LIMITED':status>=500?'SERVER_ERROR':status>=400&&status<500?(data?.code??'INVALID_COMMAND'):'NETWORK_ERROR';
-    throw Object.assign(new Error(code),{code,definitive:status>=400&&status<500&&status!==429});
+    throw Object.assign(new Error(code),{code,status,path,definitive:status>=400&&status<500&&status!==429});
   }
   async exportSession() {
     if(!this.context||!this.browser?.isConnected()) throw new Error('Đăng nhập trong cửa sổ game trước khi xuất phiên.');

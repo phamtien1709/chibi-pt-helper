@@ -35,6 +35,13 @@ try {
   console.log(`Tài khoản: ${runner.player.name}; số dư: ${runner.snapshot.farm.coins} xu.`);
   console.log(`Hạn mức chi: ${runner.settings.spendLimit} xu; giữ lại: ${runner.settings.reserveCoins} xu.`);
   console.log(`Dự kiến: ${runner.view().planned.actions.map(a=>a.label).join(' | ')||'Chờ mốc tiếp theo'}`);
+  if(check){
+    const view=runner.view();
+    console.log(`Chế độ tự động: ${runner.settings.autoPlan?'bật':'tắt'}; nấu: ${runner.settings.cook?'bật':'tắt'}; bán món: ${runner.settings.sellDishes?'bật':'tắt'}.`);
+    console.log(`Kho: ${JSON.stringify(runner.snapshot.farm.inventory)}`);
+    console.log(`Bếp: ${JSON.stringify(runner.snapshot.farm.kitchen)}`);
+    console.log(`Lịch tiếp theo: ${JSON.stringify(view.planned.events.slice(0,12))}`);
+  }
   if(!check&&!stopping){
     await runner.start();
     while(runner.running||runner.busy)await new Promise(resolve=>setTimeout(resolve,500));

@@ -92,7 +92,7 @@ systemctl --user stop chibi-farm-helper
 systemctl --user restart chibi-farm-helper
 ```
 
-Dịch vụ tự khởi động lại khi gặp lỗi mạng kéo dài hoặc tiến trình chết; không restart vòng lặp khi sai tài khoản, sai mật khẩu, lỗi cấu hình hoặc lỗi nghiệp vụ (exit 78). Với chế độ chỉ dùng cookie, hết phiên cũng dừng; chế độ --credentials tự lấy phiên mới. Không mở cổng web nào trên VPS. Trạng thái nằm ở `~/.local/state/chibi-farm-helper/runtime.json`, tách khỏi repo và giữ qua git pull.
+Dịch vụ tự khởi động lại khi gặp lỗi mạng kéo dài hoặc tiến trình chết; không restart vòng lặp khi sai tài khoản, sai mật khẩu, lỗi cấu hình hoặc lỗi nghiệp vụ kéo dài (exit 78). Với chế độ chỉ dùng cookie, hết phiên cũng dừng; chế độ --credentials tự lấy phiên mới. Không mở cổng web nào trên VPS. Trạng thái nằm ở `~/.local/state/chibi-farm-helper/runtime.json`, tách khỏi repo và giữ qua git pull.
 
 Sau khi xuất phiên mới, chép tới đường dẫn file phiên cũ trên VPS bằng cách an toàn, giữ quyền 600 rồi restart service. Phiên hiện tại thường tối đa 30 ngày theo luật backend; có thể bị thu hồi sớm. Không cam kết chạy vĩnh viễn không cần can thiệp: thông tin đăng nhập không còn đúng, đầy kho, thay API hoặc VPS hỏng vẫn cần xử lý. Chế độ chỉ cookie cần xuất lại khi hết phiên; --credentials tự đăng nhập lại. Xem `systemctl status` và nhật ký khi nghi ngờ bot dừng.
 
@@ -116,3 +116,19 @@ PORT=4180 source ./run.sh --demo
 Demo không chạm tài khoản thật. Tests kiểm tra mốc giờ server, nguyên liệu, sức chứa, hạn mức, retry không chi trùng, phục hồi trạng thái, khóa tài khoản, phân bổ cây và transport API. Cài systemd thực tế cần kiểm chứng trên VPS Linux của bạn; môi trường phát triển hiện tại là macOS.
 
 `.gitignore` loại `.private/`, file phiên theo mẫu `session*.json` / `*.session.json`, file đăng nhập theo mẫu `login*.json` / `credentials*.json` / `*.credentials.json` và node_modules. Đặt mọi bí mật trong `.private/` hoặc ngoài repo; kiểm tra git status trước khi push. Không đưa file phiên tên tùy ý vào repo.
+
+### Khi server từ chối thao tác
+
+Tool ghi tên thao tác, nội dung lệnh, mã HTTP và trạng thái trại liên quan (không có thông tin đăng nhập). Với `NOT_ALLOWED` được server xác nhận, tool bỏ lệnh bị từ chối, chờ 5 giây rồi đọc lại trạng thái và lập kế hoạch mới. Sau 3 lần bị từ chối liên tiếp mà không có lệnh thành công, tool dừng với mã 78 để kiểm tra luật game. Lỗi mạng vẫn giữ nguyên requestId để tránh thực hiện giao dịch hai lần.
+
+Kiểm tra đúng trạng thái của service (dừng service trước để không tranh khóa):
+
+```bash
+systemctl --user stop chibi-farm-helper
+CHIBI_STATE_FILE="$HOME/.local/state/chibi-farm-helper/runtime.json" \
+  bash ./run.sh --terminal --credentials "$HOME/.config/chibi-farm-helper/login.json" --check
+systemctl --user restart chibi-farm-helper
+journalctl --user -u chibi-farm-helper -n 60 --no-pager -o cat
+```
+
+`--check` chỉ đọc game và hiển thị kho, bếp, lịch, chế độ tự động; không gửi lệnh chăm trại. Log mới giúp xác định thao tác bị từ chối, nhưng không khẳng định mọi lỗi `NOT_ALLOWED` đều do trạng thái cũ.

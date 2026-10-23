@@ -95,7 +95,7 @@ export class ApiTransport {
     }
     const status=response.status;
     const code=status===401?'UNAUTHENTICATED':status===429?'RATE_LIMITED':status>=500?'SERVER_ERROR':status>=400&&status<500?(data?.code??'INVALID_COMMAND'):'NETWORK_ERROR';
-    throw Object.assign(new Error(code),{code,definitive:status>=400&&status<500&&status!==429});
+    throw Object.assign(new Error(code),{code,status,path,definitive:status>=400&&status<500&&status!==429});
   }
   async close() {this.session=null;}
 }
